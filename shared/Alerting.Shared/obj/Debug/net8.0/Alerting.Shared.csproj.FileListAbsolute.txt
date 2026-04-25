@@ -1,0 +1,13 @@
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.csproj.AssemblyReference.cache
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.GeneratedMSBuildEditorConfig.editorconfig
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.AssemblyInfoInputs.cache
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.AssemblyInfo.cs
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.csproj.CoreCompileInputs.cache
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.sourcelink.json
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/bin/Debug/net8.0/Alerting.Shared.deps.json
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/bin/Debug/net8.0/Alerting.Shared.dll
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/bin/Debug/net8.0/Alerting.Shared.pdb
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.dll
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/refint/Alerting.Shared.dll
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/Alerting.Shared.pdb
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/obj/Debug/net8.0/ref/Alerting.Shared.dll

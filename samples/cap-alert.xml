@@ -1,0 +1,12 @@
+<alert>
+  <identifier>123</identifier>
+  <sender>anepec.pt</sender>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <info>
+    <category>Fire</category>
+    <urgency>Immediate</urgency>
+    <severity>Severe</severity>
+    <description>Incendio em Braga</description>
+  </info>
+</alert>
