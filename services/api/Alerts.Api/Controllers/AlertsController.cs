@@ -44,6 +44,8 @@ public sealed class AlertsController : ControllerBase
         }
 
         var eventId = Guid.NewGuid();
+        var targetUserId = ResolveTargetUserId();
+        var isBroadcast = IsBroadcast();
         var createdEvent = new AlertCreatedEvent(
             EventId: eventId,
             Source: "CAP",
@@ -54,14 +56,18 @@ public sealed class AlertsController : ControllerBase
             CapIdentifier: capAlert.Identifier,
             Sender: capAlert.Sender,
             Urgency: capAlert.Urgency,
-            Severity: capAlert.Severity);
+            Severity: capAlert.Severity,
+            TargetUserId: targetUserId,
+            IsBroadcast: isBroadcast);
 
         using (_logger.BeginScope(new Dictionary<string, object> { ["eventId"] = eventId }))
         {
             _logger.LogInformation(
-                "CAP alert accepted with identifier {Identifier} from sender {Sender}",
+                "CAP alert accepted with identifier {Identifier} from sender {Sender} for target {TargetUserId} broadcast {IsBroadcast}",
                 capAlert.Identifier,
-                capAlert.Sender);
+                capAlert.Sender,
+                targetUserId,
+                isBroadcast);
 
             await _publisher.PublishAsync(
                 _kafkaOptions.AlertsCreatedTopic,
@@ -75,8 +81,35 @@ public sealed class AlertsController : ControllerBase
             eventId = createdEvent.EventId,
             status = "queued",
             priority = createdEvent.Priority.ToString().ToUpperInvariant(),
-            topic = _kafkaOptions.AlertsCreatedTopic
+            topic = _kafkaOptions.AlertsCreatedTopic,
+            targetUserId,
+            isBroadcast
         });
+    }
+
+    private string ResolveTargetUserId()
+    {
+        if (Request.Headers.TryGetValue("X-User-Id", out var headerValues))
+        {
+            var userId = headerValues.ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                return userId;
+            }
+        }
+
+        return "user-123";
+    }
+
+    private bool IsBroadcast()
+    {
+        if (Request.Headers.TryGetValue("X-Broadcast", out var values) &&
+            bool.TryParse(values.ToString(), out var isBroadcast))
+        {
+            return isBroadcast;
+        }
+
+        return false;
     }
 
     private static bool TryParseCap(string xmlPayload, out CapAlertData? capAlert, out string? error)

@@ -76,25 +76,32 @@ public sealed class Worker : BackgroundService
     {
         var processedEvent = JsonMessageSerializer.Deserialize<AlertProcessedEvent>(payload);
 
-        if (processedEvent is null)
+        if (processedEvent is null || !IsOwnedChannel(processedEvent.Channel))
         {
             return;
         }
 
-        foreach (var channel in processedEvent.RequestedChannels.Where(IsOwnedChannel))
+        using (_logger.BeginScope(new Dictionary<string, object>
+               {
+                   ["eventId"] = processedEvent.EventId,
+                   ["deviceId"] = processedEvent.DeviceId,
+                   ["userId"] = processedEvent.UserId
+               }))
         {
-            using (_logger.BeginScope(new Dictionary<string, object> { ["eventId"] = processedEvent.EventId }))
-            {
-                var dispatchResult = await DispatchWithRetryAsync(
-                    processedEvent.EventId,
-                    processedEvent.Message,
-                    processedEvent.Priority,
-                    channel,
-                    processedEvent.RequestedChannels,
-                    cancellationToken);
+            var dispatchResult = await DispatchWithRetryAsync(
+                processedEvent.EventId,
+                processedEvent.UserId,
+                processedEvent.DeviceId,
+                processedEvent.Message,
+                processedEvent.Priority,
+                processedEvent.Channel,
+                processedEvent.AvailableChannels,
+                processedEvent.IsFallback,
+                processedEvent.PreviousChannel,
+                processedEvent.PushToken,
+                cancellationToken);
 
-                await PublishResultAsync(dispatchResult, cancellationToken);
-            }
+            await PublishResultAsync(dispatchResult, cancellationToken);
         }
     }
 
@@ -108,38 +115,51 @@ public sealed class Worker : BackgroundService
         }
 
         var nextChannel = dispatchResult.Channel.NextFallbackChannel();
-        if (nextChannel is null || !IsOwnedChannel(nextChannel.Value))
+        if (nextChannel is null)
         {
-            if (nextChannel is null)
-            {
-                await PublishFailedAsync(dispatchResult, cancellationToken);
-            }
-
+            await PublishFailedAsync(dispatchResult, cancellationToken);
             return;
         }
 
-        if (dispatchResult.RequestedChannels.Contains(nextChannel.Value))
+        if (!dispatchResult.AvailableChannels.SupportsChannel(nextChannel.Value))
         {
             _logger.LogInformation(
-                "Skipping fallback to {Channel} for event {EventId} because it is already part of primary routing",
-                nextChannel.Value,
-                dispatchResult.EventId);
+                "Device {DeviceId} does not support fallback channel {Channel}",
+                dispatchResult.DeviceId,
+                nextChannel.Value);
+            await PublishFailedAsync(dispatchResult, cancellationToken);
             return;
         }
 
-        using (_logger.BeginScope(new Dictionary<string, object> { ["eventId"] = dispatchResult.EventId }))
+        if (!IsOwnedChannel(nextChannel.Value))
+        {
+            return;
+        }
+
+        using (_logger.BeginScope(new Dictionary<string, object>
+               {
+                   ["eventId"] = dispatchResult.EventId,
+                   ["deviceId"] = dispatchResult.DeviceId,
+                   ["userId"] = dispatchResult.UserId
+               }))
         {
             _logger.LogWarning(
-                "Triggering fallback from {FailedChannel} to {NextChannel}",
+                "Triggering fallback from {FailedChannel} to {NextChannel} for device {DeviceId}",
                 dispatchResult.Channel,
-                nextChannel.Value);
+                nextChannel.Value,
+                dispatchResult.DeviceId);
 
             var fallbackResult = await DispatchWithRetryAsync(
                 dispatchResult.EventId,
+                dispatchResult.UserId,
+                dispatchResult.DeviceId,
                 dispatchResult.Message,
                 dispatchResult.Priority,
                 nextChannel.Value,
-                dispatchResult.RequestedChannels,
+                dispatchResult.AvailableChannels,
+                true,
+                dispatchResult.Channel,
+                dispatchResult.PushToken,
                 cancellationToken);
 
             await PublishResultAsync(fallbackResult, cancellationToken);
@@ -148,10 +168,15 @@ public sealed class Worker : BackgroundService
 
     private async Task<AlertDispatchResultEvent> DispatchWithRetryAsync(
         Guid eventId,
+        string userId,
+        string deviceId,
         string message,
         AlertPriority priority,
         DispatchChannel channel,
-        IReadOnlyCollection<DispatchChannel> requestedChannels,
+        IReadOnlyCollection<DispatchChannel> availableChannels,
+        bool isFallback,
+        DispatchChannel? previousChannel,
+        string? pushToken,
         CancellationToken cancellationToken)
     {
         for (var attempt = 1; attempt <= _simulationOptions.MaxRetries; attempt++)
@@ -159,27 +184,33 @@ public sealed class Worker : BackgroundService
             if (!_simulator.ShouldFail(channel))
             {
                 _logger.LogInformation(
-                    "{Channel} dispatch succeeded on attempt {Attempt} for message {Message}",
+                    "{Channel} dispatch succeeded on attempt {Attempt} for device {DeviceId}",
                     channel,
                     attempt,
-                    message);
+                    deviceId);
 
                 return new AlertDispatchResultEvent(
                     EventId: eventId,
+                    UserId: userId,
+                    DeviceId: deviceId,
                     Message: message,
                     Priority: priority,
                     Channel: channel,
                     Status: DispatchStatus.Succeeded,
                     Attempts: attempt,
                     TimestampUtc: DateTime.UtcNow,
-                    RequestedChannels: requestedChannels);
+                    AvailableChannels: availableChannels,
+                    IsFallback: isFallback,
+                    PreviousChannel: previousChannel,
+                    PushToken: pushToken);
             }
 
             _logger.LogWarning(
-                "{Channel} dispatch failed on attempt {Attempt} for event {EventId}",
+                "{Channel} dispatch failed on attempt {Attempt} for event {EventId} device {DeviceId}",
                 channel,
                 attempt,
-                eventId);
+                eventId,
+                deviceId);
 
             if (attempt < _simulationOptions.MaxRetries)
             {
@@ -191,13 +222,18 @@ public sealed class Worker : BackgroundService
 
         return new AlertDispatchResultEvent(
             EventId: eventId,
+            UserId: userId,
+            DeviceId: deviceId,
             Message: message,
             Priority: priority,
             Channel: channel,
             Status: DispatchStatus.Failed,
             Attempts: _simulationOptions.MaxRetries,
             TimestampUtc: DateTime.UtcNow,
-            RequestedChannels: requestedChannels,
+            AvailableChannels: availableChannels,
+            IsFallback: isFallback,
+            PreviousChannel: previousChannel,
+            PushToken: pushToken,
             FailureReason: $"{channel} dispatch exhausted all retries.");
     }
 
@@ -205,7 +241,7 @@ public sealed class Worker : BackgroundService
     {
         await _publisher.PublishAsync(
             _kafkaOptions.AlertsDispatchedTopic,
-            dispatchResult.EventId.ToString(),
+            $"{dispatchResult.EventId}:{dispatchResult.DeviceId}:{dispatchResult.Channel}",
             dispatchResult,
             cancellationToken);
 
@@ -219,6 +255,8 @@ public sealed class Worker : BackgroundService
     {
         var failedEvent = new AlertFailedEvent(
             EventId: dispatchResult.EventId,
+            UserId: dispatchResult.UserId,
+            DeviceId: dispatchResult.DeviceId,
             Message: dispatchResult.Message,
             Priority: dispatchResult.Priority,
             FailedChannel: dispatchResult.Channel,
@@ -227,7 +265,7 @@ public sealed class Worker : BackgroundService
 
         await _publisher.PublishAsync(
             _kafkaOptions.AlertsFailedTopic,
-            dispatchResult.EventId.ToString(),
+            $"{dispatchResult.EventId}:{dispatchResult.DeviceId}:failed",
             failedEvent,
             cancellationToken);
     }

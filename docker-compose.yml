@@ -44,6 +44,8 @@ services:
         kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic alerts.processed --partitions 3 --replication-factor 1
         kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic alerts.dispatched --partitions 3 --replication-factor 1
         kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic alerts.failed --partitions 3 --replication-factor 1
+        kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic devices.registered --partitions 3 --replication-factor 1
+        kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic devices.status.updated --partitions 3 --replication-factor 1
         kafka-topics.sh --bootstrap-server kafka:9092 --list
     restart: "no"
 
@@ -91,6 +93,17 @@ services:
       DOTNET_ENVIRONMENT: Development
       Kafka__BootstrapServers: kafka:9092
 
+  device-service:
+    build:
+      context: .
+      dockerfile: services/device-service/Device.Service/Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      Kafka__BootstrapServers: kafka:9092
+
   push-service:
     build:
       context: .
@@ -101,11 +114,34 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Development
       Kafka__BootstrapServers: kafka:9092
+      Fcm__UseMockWhenCredentialsMissing: "true"
 
   sms-service:
     build:
       context: .
       dockerfile: services/sms-service/Sms.Service/Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      Kafka__BootstrapServers: kafka:9092
+
+  whatsapp-service:
+    build:
+      context: .
+      dockerfile: services/whatsapp-service/Whatsapp.Service/Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      Kafka__BootstrapServers: kafka:9092
+
+  telegram-service:
+    build:
+      context: .
+      dockerfile: services/telegram-service/Telegram.Service/Dockerfile
     depends_on:
       kafka-init:
         condition: service_completed_successfully

@@ -9,5 +9,7 @@ public sealed class KafkaOptions
     public string AlertsProcessedTopic { get; set; } = "alerts.processed";
     public string AlertsDispatchedTopic { get; set; } = "alerts.dispatched";
     public string AlertsFailedTopic { get; set; } = "alerts.failed";
+    public string DevicesRegisteredTopic { get; set; } = "devices.registered";
+    public string DevicesStatusUpdatedTopic { get; set; } = "devices.status.updated";
     public string ClientId { get; set; } = Environment.MachineName;
 }

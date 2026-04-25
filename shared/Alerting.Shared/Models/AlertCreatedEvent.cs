@@ -12,4 +12,6 @@ public sealed record AlertCreatedEvent(
     string CapIdentifier,
     string Sender,
     string Urgency,
-    string Severity);
+    string Severity,
+    string TargetUserId,
+    bool IsBroadcast);

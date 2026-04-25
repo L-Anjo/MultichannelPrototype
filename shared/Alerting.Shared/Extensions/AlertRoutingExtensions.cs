@@ -46,4 +46,104 @@ public static class AlertRoutingExtensions
             DispatchChannel.Sms => DispatchChannel.Email,
             _ => null
         };
+
+    public static DispatchChannel? ResolveInitialChannel(
+        this AlertPriority priority,
+        IReadOnlyCollection<DispatchChannel> channels,
+        bool isOnline,
+        string? pushToken)
+    {
+        var normalized = channels.ToHashSet();
+
+        return priority switch
+        {
+            AlertPriority.High => ResolveHighPriorityChannel(normalized, isOnline, pushToken),
+            AlertPriority.Medium => ResolveMediumPriorityChannel(normalized, isOnline, pushToken),
+            AlertPriority.Low => ResolveLowPriorityChannel(normalized),
+            _ => null
+        };
+    }
+
+    public static bool SupportsChannel(this IReadOnlyCollection<DispatchChannel> channels, DispatchChannel channel) =>
+        channels.Contains(channel);
+
+    private static DispatchChannel? ResolveHighPriorityChannel(
+        ISet<DispatchChannel> channels,
+        bool isOnline,
+        string? pushToken)
+    {
+        if (isOnline &&
+            !string.IsNullOrWhiteSpace(pushToken) &&
+            channels.Contains(DispatchChannel.Push))
+        {
+            return DispatchChannel.Push;
+        }
+
+        if (channels.Contains(DispatchChannel.Sms))
+        {
+            return DispatchChannel.Sms;
+        }
+
+        if (channels.Contains(DispatchChannel.Email))
+        {
+            return DispatchChannel.Email;
+        }
+
+        if (channels.Contains(DispatchChannel.Whatsapp))
+        {
+            return DispatchChannel.Whatsapp;
+        }
+
+        if (channels.Contains(DispatchChannel.Telegram))
+        {
+            return DispatchChannel.Telegram;
+        }
+
+        return null;
+    }
+
+    private static DispatchChannel? ResolveMediumPriorityChannel(
+        ISet<DispatchChannel> channels,
+        bool isOnline,
+        string? pushToken)
+    {
+        if (isOnline &&
+            !string.IsNullOrWhiteSpace(pushToken) &&
+            channels.Contains(DispatchChannel.Push))
+        {
+            return DispatchChannel.Push;
+        }
+
+        if (channels.Contains(DispatchChannel.Whatsapp))
+        {
+            return DispatchChannel.Whatsapp;
+        }
+
+        if (channels.Contains(DispatchChannel.Telegram))
+        {
+            return DispatchChannel.Telegram;
+        }
+
+        return null;
+    }
+
+    private static DispatchChannel? ResolveLowPriorityChannel(ISet<DispatchChannel> channels)
+    {
+        if (channels.Contains(DispatchChannel.Email))
+        {
+            return DispatchChannel.Email;
+        }
+
+        if (channels.Contains(DispatchChannel.Telegram))
+        {
+            return DispatchChannel.Telegram;
+        }
+
+        if (channels.Contains(DispatchChannel.Whatsapp))
+        {
+            return DispatchChannel.Whatsapp;
+        }
+
+        return null;
+    }
 }

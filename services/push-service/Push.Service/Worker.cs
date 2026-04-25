@@ -12,6 +12,7 @@ public sealed class Worker : BackgroundService
     private readonly KafkaConsumerFactory _consumerFactory;
     private readonly IKafkaEventPublisher _publisher;
     private readonly PushDispatchSimulator _simulator;
+    private readonly FcmPushSender _fcmPushSender;
     private readonly DispatcherSimulationOptions _simulationOptions;
     private readonly KafkaOptions _kafkaOptions;
     private readonly ILogger<Worker> _logger;
@@ -20,6 +21,7 @@ public sealed class Worker : BackgroundService
         KafkaConsumerFactory consumerFactory,
         IKafkaEventPublisher publisher,
         PushDispatchSimulator simulator,
+        FcmPushSender fcmPushSender,
         IOptions<DispatcherSimulationOptions> simulationOptions,
         IOptions<KafkaOptions> kafkaOptions,
         ILogger<Worker> logger)
@@ -27,6 +29,7 @@ public sealed class Worker : BackgroundService
         _consumerFactory = consumerFactory;
         _publisher = publisher;
         _simulator = simulator;
+        _fcmPushSender = fcmPushSender;
         _simulationOptions = simulationOptions.Value;
         _kafkaOptions = kafkaOptions.Value;
         _logger = logger;
@@ -44,7 +47,7 @@ public sealed class Worker : BackgroundService
                 var result = consumer.Consume(stoppingToken);
                 var processedEvent = JsonMessageSerializer.Deserialize<AlertProcessedEvent>(result.Message.Value);
 
-                if (processedEvent is null || !processedEvent.RequestedChannels.Contains(DispatchChannel.Push))
+                if (processedEvent is null || processedEvent.Channel != DispatchChannel.Push)
                 {
                     consumer.Commit(result);
                     continue;
@@ -56,7 +59,7 @@ public sealed class Worker : BackgroundService
 
                     await _publisher.PublishAsync(
                         _kafkaOptions.AlertsDispatchedTopic,
-                        processedEvent.EventId.ToString(),
+                        $"{processedEvent.EventId}:{processedEvent.DeviceId}:push",
                         dispatchResult,
                         stoppingToken);
                 }
@@ -85,28 +88,40 @@ public sealed class Worker : BackgroundService
     {
         for (var attempt = 1; attempt <= _simulationOptions.MaxRetries; attempt++)
         {
-            if (!_simulator.ShouldFail())
+            var fcmDelivered = await _fcmPushSender.SendAsync(
+                processedEvent.PushToken ?? string.Empty,
+                processedEvent.Message,
+                cancellationToken);
+
+            if (fcmDelivered && !_simulator.ShouldFail())
             {
                 _logger.LogInformation(
-                    "Push dispatch succeeded on attempt {Attempt} for message {Message}",
+                    "Push dispatch succeeded on attempt {Attempt} for device {DeviceId} message {Message}",
                     attempt,
+                    processedEvent.DeviceId,
                     processedEvent.Message);
 
                 return new AlertDispatchResultEvent(
                     EventId: processedEvent.EventId,
+                    UserId: processedEvent.UserId,
+                    DeviceId: processedEvent.DeviceId,
                     Message: processedEvent.Message,
                     Priority: processedEvent.Priority,
                     Channel: DispatchChannel.Push,
                     Status: DispatchStatus.Succeeded,
                     Attempts: attempt,
                     TimestampUtc: DateTime.UtcNow,
-                    RequestedChannels: processedEvent.RequestedChannels);
+                    AvailableChannels: processedEvent.AvailableChannels,
+                    IsFallback: processedEvent.IsFallback,
+                    PreviousChannel: processedEvent.PreviousChannel,
+                    PushToken: processedEvent.PushToken);
             }
 
             _logger.LogWarning(
-                "Push dispatch failed on attempt {Attempt} for event {EventId}",
+                "Push dispatch failed on attempt {Attempt} for event {EventId} device {DeviceId}",
                 attempt,
-                processedEvent.EventId);
+                processedEvent.EventId,
+                processedEvent.DeviceId);
 
             if (attempt < _simulationOptions.MaxRetries)
             {
@@ -118,13 +133,20 @@ public sealed class Worker : BackgroundService
 
         return new AlertDispatchResultEvent(
             EventId: processedEvent.EventId,
+            UserId: processedEvent.UserId,
+            DeviceId: processedEvent.DeviceId,
             Message: processedEvent.Message,
             Priority: processedEvent.Priority,
             Channel: DispatchChannel.Push,
             Status: DispatchStatus.Failed,
             Attempts: _simulationOptions.MaxRetries,
             TimestampUtc: DateTime.UtcNow,
-            RequestedChannels: processedEvent.RequestedChannels,
-            FailureReason: "Push dispatch exhausted all retries.");
+            AvailableChannels: processedEvent.AvailableChannels,
+            IsFallback: processedEvent.IsFallback,
+            PreviousChannel: processedEvent.PreviousChannel,
+            PushToken: processedEvent.PushToken,
+            FailureReason: string.IsNullOrWhiteSpace(processedEvent.PushToken)
+                ? "Push dispatch failed because the device has no push token."
+                : "Push dispatch exhausted all retries.");
     }
 }

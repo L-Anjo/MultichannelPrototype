@@ -4,5 +4,7 @@ public enum DispatchChannel
 {
     Push,
     Sms,
-    Email
+    Email,
+    Whatsapp,
+    Telegram
 }

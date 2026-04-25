@@ -29,7 +29,9 @@ export default function () {
 
   const response = http.post('http://localhost:8080/alerts', xmlPayload, {
     headers: {
-      'Content-Type': 'application/xml'
+      'Content-Type': 'application/xml',
+      'X-User-Id': `user-${__VU}`,
+      'X-Broadcast': 'false'
     }
   });
 

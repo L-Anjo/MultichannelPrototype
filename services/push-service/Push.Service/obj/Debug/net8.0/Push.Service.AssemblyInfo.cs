@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Push.Service")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9663df3d305d55eb4c284070e8cde0097467f87f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e81932392320490576e83bf21c95d78c415844d9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Push.Service")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Push.Service")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
