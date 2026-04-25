@@ -1,0 +1,4 @@
+**/bin
+**/obj
+.git
+mobile-app/node_modules
