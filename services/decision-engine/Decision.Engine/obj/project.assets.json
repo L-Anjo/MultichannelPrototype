@@ -702,6 +702,22 @@
           "buildTransitive/net6.0/_._": {}
         }
       },
+      "Npgsql/8.0.4": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/Npgsql.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Npgsql.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "System.Diagnostics.EventLog/8.0.1": {
         "type": "package",
         "compile": {
@@ -737,7 +753,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "8.0.1",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2",
           "Microsoft.Extensions.Logging.Console": "8.0.0",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0"
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0",
+          "Npgsql": "8.0.4"
         },
         "compile": {
           "bin/placeholder/Alerting.Shared.dll": {}
@@ -1708,6 +1725,29 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "Npgsql/8.0.4": {
+      "sha512": "vaYEUlF/pB9m8bs21wQv3Da0kMHT4A9USe47VfY/L2BO97xz5KfIxhEu22QS9d68ZrLxvtL3wQDfDLPr2OjbjA==",
+      "type": "package",
+      "path": "npgsql/8.0.4",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net6.0/Npgsql.dll",
+        "lib/net6.0/Npgsql.xml",
+        "lib/net7.0/Npgsql.dll",
+        "lib/net7.0/Npgsql.xml",
+        "lib/net8.0/Npgsql.dll",
+        "lib/net8.0/Npgsql.xml",
+        "lib/netstandard2.0/Npgsql.dll",
+        "lib/netstandard2.0/Npgsql.xml",
+        "lib/netstandard2.1/Npgsql.dll",
+        "lib/netstandard2.1/Npgsql.xml",
+        "npgsql.8.0.4.nupkg.sha512",
+        "npgsql.nuspec",
+        "postgresql.png"
+      ]
+    },
     "System.Diagnostics.EventLog/8.0.1": {
       "sha512": "n1ZP7NM2Gkn/MgD8+eOT5MulMj6wfeQMNS2Pizvq5GHCZfjlFMXV2irQlQmJhwA2VABC57M0auudO89Iu2uRLg==",
       "type": "package",
@@ -1834,5 +1874,13 @@
         "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.403/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json."
+    }
+  ]
 }

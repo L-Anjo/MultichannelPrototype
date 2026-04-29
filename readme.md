@@ -6,7 +6,7 @@ Prototipo de disseminacao de alertas criticos com Event-Driven Architecture, CAP
 
 - `alerts-api` para receber alertas CAP e registo de devices
 - `decision-engine` com projeção de devices em memoria, alimentada por eventos Kafka
-- `device-service` para materializar o catalogo de dispositivos
+- `device-service` para materializar o catalogo de dispositivos e persisti-lo em PostgreSQL
 - `push-service` com FCM mock-ready
 - `sms-service` com SMS e Email mock
 - `whatsapp-service` e `telegram-service` como canais OTT simulados
@@ -17,10 +17,12 @@ Prototipo de disseminacao de alertas criticos com Event-Driven Architecture, CAP
 1. A app mobile chama `POST /devices` e publica um `devices.registered`.
 2. A app envia contexto periodico para `PUT /devices/{deviceId}/status` e publica `devices.status.updated`.
 3. O `decision-engine` consome esses eventos e mantem uma projecao local de devices.
-4. A API recebe um CAP XML em `POST /alerts` e publica `alerts.created`.
-5. O `decision-engine` resolve, por device, o melhor canal inicial e publica `alerts.processed`.
-6. Cada dispatcher consome apenas os eventos do seu canal e publica `alerts.dispatched`.
-7. Falhas seguem fallback assíncrono: `Push -> SMS -> Email -> alerts.failed`.
+4. O `device-service` persiste o estado atual dos devices em PostgreSQL.
+5. Ao arrancar, o `decision-engine` aquece a projecao local a partir do PostgreSQL.
+6. A API recebe um CAP XML em `POST /alerts` e publica `alerts.created`.
+7. O `decision-engine` resolve, por device, o melhor canal inicial e publica `alerts.processed`.
+8. Cada dispatcher consome apenas os eventos do seu canal e publica `alerts.dispatched`.
+9. Falhas seguem fallback assíncrono: `Push -> SMS -> Email -> alerts.failed`.
 
 ## Regras de decisao
 
@@ -50,6 +52,13 @@ Fallback de entrega:
 - `alerts.failed`
 - `devices.registered`
 - `devices.status.updated`
+
+## Persistencia de devices
+
+- PostgreSQL como catalogo persistente de devices
+- `device-service` como writer do catalogo
+- `decision-engine` faz warm-up da projecao local a partir da tabela `devices`
+- Kafka continua a ser o backbone de eventos, nao a base de dados operacional
 
 ## Estrutura
 
@@ -85,6 +94,7 @@ UIs:
 - Swagger: `http://localhost:8080/swagger`
 - Kafka UI: `http://localhost:8085`
 - Portainer: `http://localhost:9000`
+- PostgreSQL: `localhost:5432`
 
 ## Testes rapidos
 
@@ -147,13 +157,31 @@ k6 run k6/alerts-load.js
 k6 run k6/broadcast-alert.js
 ```
 
+## Testes automatizados
+
+```bash
+dotnet test tests/Architecture.Tests/Architecture.Tests.csproj
+```
+
 ## Mobile app
 
 Ver [mobile-app/README.md](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/mobile-app/README.md).
 
+## Documentacao tecnica detalhada
+
+- [Arquitetura Global](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/architecture-global.md)
+- [Alerts API](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/alerts-api.md)
+- [Decision Engine](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/decision-engine.md)
+- [Device Service](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/device-service.md)
+- [Push Service](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/push-service.md)
+- [SMS Service](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/sms-service.md)
+- [Whatsapp Service](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/whatsapp-service.md)
+- [Telegram Service](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/telegram-service.md)
+- [Mobile App](/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/docs/mobile-app.md)
+
 ## Nota sobre arranque
 
-Como o `decision-engine` constroi a sua projeção de devices a partir dos eventos Kafka, o primeiro alerta logo apos um restart pode chegar antes dessa projeção estar quente. Em steady-state o comportamento fica correto, e isso e o que foi validado no prototipo.
+O `decision-engine` continua a reagir a eventos Kafka, mas agora faz warm-up inicial a partir do PostgreSQL. Isso reduz o risco de falhas por falta de contexto logo apos restart, embora a sincronizacao final continue a ser eventual.
 
 ## Stack atual
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "zMDHdkW5aDU=",
+  "dgSpecHash": "VM/p3ZwHE5o=",
   "success": true,
   "projectFilePath": "/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/shared/Alerting.Shared/Alerting.Shared.csproj",
   "expectedPackageFiles": [
@@ -21,6 +21,7 @@
     "/Users/anjo/.nuget/packages/microsoft.extensions.options/8.0.2/microsoft.extensions.options.8.0.2.nupkg.sha512",
     "/Users/anjo/.nuget/packages/microsoft.extensions.options.configurationextensions/8.0.0/microsoft.extensions.options.configurationextensions.8.0.0.nupkg.sha512",
     "/Users/anjo/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "/Users/anjo/.nuget/packages/npgsql/8.0.4/npgsql.8.0.4.nupkg.sha512",
     "/Users/anjo/.nuget/packages/system.text.encodings.web/8.0.0/system.text.encodings.web.8.0.0.nupkg.sha512",
     "/Users/anjo/.nuget/packages/system.text.json/8.0.0/system.text.json.8.0.0.nupkg.sha512"
   ],

@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: alerting
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d alerting"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   kafka:
     image: bitnamilegacy/kafka:latest
     container_name: kafka
@@ -89,9 +106,12 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       DOTNET_ENVIRONMENT: Development
       Kafka__BootstrapServers: kafka:9092
+      Postgres__ConnectionString: Host=postgres;Port=5432;Database=alerting;Username=postgres;Password=postgres
 
   device-service:
     build:
@@ -100,9 +120,12 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       DOTNET_ENVIRONMENT: Development
       Kafka__BootstrapServers: kafka:9092
+      Postgres__ConnectionString: Host=postgres;Port=5432;Database=alerting;Username=postgres;Password=postgres
 
   push-service:
     build:
@@ -152,3 +175,4 @@ services:
 volumes:
   kafka_data:
   portainer_data:
+  postgres_data:

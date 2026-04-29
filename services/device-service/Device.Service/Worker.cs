@@ -1,6 +1,7 @@
 using Alerting.Shared.Configuration;
 using Alerting.Shared.Messaging;
 using Alerting.Shared.Models;
+using Alerting.Shared.Persistence;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
 
@@ -10,17 +11,20 @@ public sealed class Worker : BackgroundService
 {
     private readonly KafkaConsumerFactory _consumerFactory;
     private readonly DeviceStore _deviceStore;
+    private readonly IDeviceCatalogRepository _repository;
     private readonly KafkaOptions _kafkaOptions;
     private readonly ILogger<Worker> _logger;
 
     public Worker(
         KafkaConsumerFactory consumerFactory,
         DeviceStore deviceStore,
+        IDeviceCatalogRepository repository,
         IOptions<KafkaOptions> kafkaOptions,
         ILogger<Worker> logger)
     {
         _consumerFactory = consumerFactory;
         _deviceStore = deviceStore;
+        _repository = repository;
         _kafkaOptions = kafkaOptions.Value;
         _logger = logger;
     }
@@ -39,10 +43,10 @@ public sealed class Worker : BackgroundService
                 switch (result.Topic)
                 {
                     case var topic when topic == _kafkaOptions.DevicesRegisteredTopic:
-                        HandleRegistered(result.Message.Value);
+                        await HandleRegisteredAsync(result.Message.Value, stoppingToken);
                         break;
                     case var topic when topic == _kafkaOptions.DevicesStatusUpdatedTopic:
-                        HandleStatusUpdated(result.Message.Value);
+                        await HandleStatusUpdatedAsync(result.Message.Value, stoppingToken);
                         break;
                 }
 
@@ -64,15 +68,17 @@ public sealed class Worker : BackgroundService
         }
     }
 
-    private void HandleRegistered(string payload)
+    private async Task HandleRegisteredAsync(string payload, CancellationToken cancellationToken)
     {
         var deviceEvent = JsonMessageSerializer.Deserialize<DeviceRegisteredEvent>(payload);
         if (deviceEvent is null)
         {
+            _logger.LogWarning("Skipping unreadable device registration event");
             return;
         }
 
         _deviceStore.Upsert(deviceEvent);
+        await _repository.UpsertAsync(deviceEvent, cancellationToken);
         _logger.LogInformation(
             "Device service stored device {DeviceId} for user {UserId}. Total devices={Count}",
             deviceEvent.DeviceId,
@@ -80,15 +86,17 @@ public sealed class Worker : BackgroundService
             _deviceStore.Count);
     }
 
-    private void HandleStatusUpdated(string payload)
+    private async Task HandleStatusUpdatedAsync(string payload, CancellationToken cancellationToken)
     {
         var statusEvent = JsonMessageSerializer.Deserialize<DeviceStatusUpdatedEvent>(payload);
         if (statusEvent is null)
         {
+            _logger.LogWarning("Skipping unreadable device status event");
             return;
         }
 
         _deviceStore.UpdateStatus(statusEvent);
+        await _repository.UpdateStatusAsync(statusEvent, cancellationToken);
         _logger.LogInformation(
             "Device service updated status for device {DeviceId} online={IsOnline}. Total devices={Count}",
             statusEvent.DeviceId,

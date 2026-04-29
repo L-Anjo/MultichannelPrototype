@@ -37,6 +37,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "telegram-service", "telegra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telegram.Service", "services\telegram-service\Telegram.Service\Telegram.Service.csproj", "{31DBC9DE-A16F-414F-8479-CD21FFC49473}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4664C4CE-B1EE-45B7-AC68-43602D0F0815}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Architecture.Tests", "tests\Architecture.Tests\Architecture.Tests.csproj", "{EC00940F-C508-4479-8052-A7D1E7D16CA4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +82,10 @@ Global
 		{31DBC9DE-A16F-414F-8479-CD21FFC49473}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31DBC9DE-A16F-414F-8479-CD21FFC49473}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31DBC9DE-A16F-414F-8479-CD21FFC49473}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC00940F-C508-4479-8052-A7D1E7D16CA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC00940F-C508-4479-8052-A7D1E7D16CA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC00940F-C508-4479-8052-A7D1E7D16CA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC00940F-C508-4479-8052-A7D1E7D16CA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2DF2A989-6167-4851-B0C3-89B6149DB77D} = {9DB98ABB-D8F7-4F61-B7AD-99332016EF9F}
@@ -95,5 +103,6 @@ Global
 		{FC3E855C-A1BD-4BF8-9278-67775D8A4D6A} = {383CD7B6-6678-411B-BB2A-B3F2BD294F1C}
 		{6E373BC3-F46B-4A2D-B118-6D490E257E06} = {831DD3B6-2686-4313-ADB4-2B6BD091EB8D}
 		{31DBC9DE-A16F-414F-8479-CD21FFC49473} = {6E373BC3-F46B-4A2D-B118-6D490E257E06}
+		{EC00940F-C508-4479-8052-A7D1E7D16CA4} = {4664C4CE-B1EE-45B7-AC68-43602D0F0815}
 	EndGlobalSection
 EndGlobal

@@ -34,7 +34,7 @@ Topicos usados:
 
 ### 2. Device service
 
-Foi criado o `device-service`, que consome os topicos de devices e mantem um catalogo em memoria:
+Foi criado o `device-service`, que consome os topicos de devices, mantem um catalogo em memoria e persiste o estado atual em PostgreSQL:
 
 - `deviceId`
 - `userId`
@@ -43,7 +43,7 @@ Foi criado o `device-service`, que consome os topicos de devices e mantem um cat
 - `isOnline`
 - `networkType`
 
-Este servico serve como materializacao do registo de dispositivos dentro da arquitetura orientada a eventos.
+Este servico serve como materializacao do registo de dispositivos dentro da arquitetura orientada a eventos e como writer do catalogo persistente.
 
 ### 3. Decision engine
 
@@ -54,6 +54,8 @@ O `decision-engine` foi alterado para consumir:
 - `devices.status.updated`
 
 Com isto ele constroi uma projeção local em memoria e, quando chega um alerta, resolve o melhor canal inicial por device.
+
+Ao arrancar, o `decision-engine` aquece essa projeção a partir do catalogo persistido em PostgreSQL antes de continuar o consumo normal de Kafka.
 
 Importante:
 
@@ -220,8 +222,8 @@ Chegar a um milhao de utilizadores e realisticamente uma questao de:
 
 ## Limites atuais do prototipo
 
-- o catalogo de devices esta em memoria
-- a projeção do `decision-engine` precisa de aquecer apos restart
+- o catalogo de devices fica persistido em PostgreSQL, mas a projeção local continua em memoria
+- a projeção do `decision-engine` continua a ser eventual, embora arranque agora com warm-up persistente
 - FCM esta em modo mock por omissao
 - nao existe persistencia forte para replays longos
 - `SMS` e `EMAIL` continuam mock
@@ -231,8 +233,8 @@ Chegar a um milhao de utilizadores e realisticamente uma questao de:
 
 ### Persistencia
 
-- trocar o store em memoria por PostgreSQL, Redis ou Cassandra
-- materializar snapshots do catalogo para warm-up rapido
+- PostgreSQL ja foi integrado como catalogo persistente de devices
+- o passo seguinte natural seria acrescentar snapshots dedicados ou cache para warm-up ainda mais rapido
 
 ### Arranque e warm-up
 

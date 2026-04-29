@@ -138,6 +138,10 @@
             "Microsoft.Extensions.Options.ConfigurationExtensions": {
               "target": "Package",
               "version": "[8.0.0, )"
+            },
+            "Npgsql": {
+              "target": "Package",
+              "version": "[8.0.4, )"
             }
           },
           "imports": [

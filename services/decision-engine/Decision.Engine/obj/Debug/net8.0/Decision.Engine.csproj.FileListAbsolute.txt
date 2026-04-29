@@ -75,3 +75,4 @@
 /Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/services/decision-engine/Decision.Engine/obj/Debug/net8.0/Decision.Engine.pdb
 /Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/services/decision-engine/Decision.Engine/obj/Debug/net8.0/Decision.Engine.genruntimeconfig.cache
 /Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/services/decision-engine/Decision.Engine/obj/Debug/net8.0/ref/Decision.Engine.dll
+/Users/anjo/Desktop/Mestrado/Tese/Code/MultichannelPrototype/services/decision-engine/Decision.Engine/bin/Debug/net8.0/Npgsql.dll

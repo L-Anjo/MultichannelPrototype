@@ -7,6 +7,16 @@ public sealed class DeviceStore
 {
     private readonly ConcurrentDictionary<string, RegisteredDevice> _devices = new();
 
+    public void LoadSnapshot(IEnumerable<RegisteredDevice> devices)
+    {
+        _devices.Clear();
+
+        foreach (var device in devices)
+        {
+            _devices[device.DeviceId] = device;
+        }
+    }
+
     public void Upsert(DeviceRegisteredEvent deviceEvent)
     {
         _devices[deviceEvent.DeviceId] = new RegisteredDevice(
